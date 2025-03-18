@@ -54,8 +54,7 @@ def create_party() -> list[dict]:
 
 def get_stats(player_class: str, stat: str) -> int: 
     min_stat, max_stat = stats[player_class][stat]
-    random_stat = randint(min_stat, max_stat)
-    return random_stat
+    return randint(min_stat, max_stat)
 
 
 def create_player(player_class:str) -> dict:
@@ -71,12 +70,91 @@ def create_player(player_class:str) -> dict:
     }
     return player
 
-def check_who_won():
+def roll_dice(dice_string: str) -> list[int]:
+    parameters = dice_string.split("d")
+    number_of_dice = int(parameters[0])
+    sides = int(parameters[1])
+    dice_list = []
+    for _ in range(number_of_dice):
+        dice_list.append(randint(1, sides))
+    return dice_list
+
+def attack(attacker: dict, defender: dict) -> None:
+    attack_dice = roll_dice(attacker["attack_dice"])
+    attack_value = sum(attack_dice)
+    print(f"{attacker['name']} rolled {attack_value}.")
+    print(f"{defender['name']} has {defender['shield']} shield.")
+    damage = attack_value - defender['shield']
+    if demage < 0:
+        demage = 0
+        print("The attack missed!")
+    print(f"Damage: {damage} ({attack_value} - {defender['shield']})")
+    defender[0] -= demage
+
+
+def get_player_max_health(defensive_team: list[dict]) -> int:
+    max_health = -1
+    player_index = None
+    for i, player in enumerate(defensive_team):
+        if player["health"] > max_health:
+            max_health = player["health"]
+            player_index = i
+    return player_index
+
+
+def get_player_min_health(defensive_team: list[dict]) -> int:
+    min_health = 10000
+    player_index = None
+    for i, player in enumerate(defensive_team):
+        if player["health"] < min_health:
+            min_health = player["health"]
+            player_index = i
+    return player_index
+
+
+def get_player_in_the_middle(defensive_team: list[dict]) -> int:
+    return len(defensive_team) // 2
+
+
+def get_random_edge_player(defensive_team: list[dict]) -> int:
+    return choice([0, len (defensive_team) -1])
+
+
+def choose_defender(attacker_class: str, defensive_team:list[dict]) -> int|None:
+    if attacker_class == "warrior":
+        return get_player_max_health(defensive_team)
+    elif attacker_class == "wizard":
+        return get_player_in_the_middle(defensive_team)
+    elif attacker_class == "rogue":
+        return get_player_min_health(defensive_team)
+    elif attacker_class == "cleric":
+        return get_random_edge_player(defensive_team)
+    else:
+        print(f"Class {attacker_class} not recognized. This should never happen!!!")
+        return None
+
+
+def attack_phase(attacking_team: list[dict], defensive_team: list[dict], attacker_index: int) -> None:
+    if attacker_index > len(attacking_team) or not defensive_team:
+        return None
+    
+    attacker = attacking_team[attacking_team]
+    defender_index = choose_defender(attacker["class"], defensive_team)
+    defender = defensive_team[defender_index]
+    attack(attacker, defender)
+
+    if defender["health"] <= 0:
+        print(f"{defender['name']} has ben defeated.")
+        defensive_team.remove(defender)
+
 
 def combat_phase(party1: list[dict], party2: list[dict]) -> None:
     for i in range(max(len(party1), len(party2))):
-        attack_phase(party1, party2) # Team 1 attack team 2
-        attack_phase(party2, party1) # Team 2 attack team 1
+        attack_phase(party1, party2, i) # Team 1 attack team 2
+        attack_phase(party2, party1, i) # Team 2 attack team 1
+
+def print_party_status(party: list[dict]) -> None:
+    pass
 
 def game_loop(party1: list, party2: list) -> None:
     turns = 0
@@ -95,9 +173,7 @@ def game_loop(party1: list, party2: list) -> None:
 def main():
     party1 = create_party()
     party2 = create_party()
-    print(party1)
-    print(party2)
-    #game_loop(party1, party2)
+    game_loop(party1, party2)
 
 
 if __name__ == "__main__":
